@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#6750A4">
+    <meta name="description" content="Track your OJT/Internship hours easily. Offline-capable PWA for Filipino college students.">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <title>OJT Time Tracker</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- Preconnect for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+</head>
+<body>
+    <!-- App Container -->
+    <div id="app">
+        
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">OJT Tracker</h1>
+                <button id="theme-toggle" class="icon-btn" aria-label="Toggle dark mode">
+                    <span class="material-icon">🌙</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-content" id="main-content">
+            
+            <!-- View: Dashboard -->
+            <section id="view-dashboard" class="view active">
+                <div class="dashboard-container">
+                    
+                    <!-- Progress Card -->
+                    <div class="card progress-card">
+                        <div class="progress-header">
+                            <h2>Progress Overview</h2>
+                            <button class="btn-text" onclick="app.openSettings()">Edit Target</button>
+                        </div>
+                        
+                        <div class="progress-ring-container">
+                            <svg class="progress-ring" viewBox="0 0 120 120">
+                                <circle class="progress-ring-bg" cx="60" cy="60" r="54"/>
+                                <circle class="progress-ring-progress" id="progress-ring" cx="60" cy="60" r="54"/>
+                            </svg>
+                            <div class="progress-text">
+                                <span class="progress-percentage" id="progress-percent">0%</span>
+                                <span class="progress-label">Completed</span>
+                            </div>
+                        </div>
+
+                        <div class="stats-grid">
+                            <div class="stat-item">
+                                <span class="stat-value" id="total-hours">0.0</span>
+                                <span class="stat-label">Hours Done</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" id="required-hours">300</span>
+                                <span class="stat-label">Required</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value" id="remaining-hours">300</span>
+                                <span class="stat-label">Remaining</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Today's Status Card -->
+                    <div class="card status-card" id="today-status">
+                        <div class="status-header">
+                            <h3>Today's Status</h3>
+                            <span class="status-badge" id="status-badge">Not Clocked In</span>
+                        </div>
+                        
+                        <div class="current-session" id="current-session" style="display: none;">
+                            <div class="session-timer">
+                                <span class="timer-label">Current Session</span>
+                                <span class="timer-value" id="session-timer">00:00:00</span>
+                            </div>
+                        </div>
+
+                        <div class="action-buttons">
+                            <button id="btn-time-in" class="btn btn-primary btn-large" onclick="app.timeIn()">
+                                <span class="btn-icon">▶</span>
+                                <span>Time In</span>
+                            </button>
+                            <button id="btn-time-out" class="btn btn-danger btn-large" onclick="app.timeOut()" style="display: none;">
+                                <span class="btn-icon">⏹</span>
+                                <span>Time Out</span>
+                            </button>
+                        </div>
+
+                        <div class="today-summary" id="today-summary">
+                            <p>No hours logged today yet</p>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="card quick-stats">
+                        <h3>This Week</h3>
+                        <div class="week-preview" id="week-preview">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View: Calendar -->
+            <section id="view-calendar" class="view">
+                <div class="calendar-container">
+                    <div class="calendar-header">
+                        <button class="icon-btn" onclick="app.changeMonth(-1)">◀</button>
+                        <h2 id="calendar-month-year">Month Year</h2>
+                        <button class="icon-btn" onclick="app.changeMonth(1)">▶</button>
+                    </div>
+                    
+                    <div class="calendar-weekdays">
+                        <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                    </div>
+                    
+                    <div class="calendar-grid" id="calendar-grid">
+                        <!-- Dynamically populated -->
+                    </div>
+
+                    <div class="calendar-legend">
+                        <div class="legend-item"><span class="dot green"></span> Complete</div>
+                        <div class="legend-item"><span class="dot yellow"></span> Partial</div>
+                        <div class="legend-item"><span class="dot red"></span> Missing</div>
+                        <div class="legend-item"><span class="dot gray"></span> Off/Future</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View: Logs -->
+            <section id="view-logs" class="view">
+                <div class="logs-container">
+                    <div class="logs-header">
+                        <h2>Time Logs</h2>
+                        <button class="btn btn-secondary" onclick="app.exportData()">Export</button>
+                    </div>
+                    
+                    <div class="logs-list" id="logs-list">
+                        <!-- Dynamically populated -->
+                    </div>
+                    
+                    <div class="logs-empty" id="logs-empty" style="display: none;">
+                        <div class="empty-icon">📝</div>
+                        <p>No time logs yet</p>
+                        <button class="btn btn-primary" onclick="app.showView('dashboard')">Clock In Now</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- View: Add Entry -->
+            <section id="view-add" class="view">
+                <div class="form-container">
+                    <h2>Add Time Entry</h2>
+                    
+                    <form id="entry-form" onsubmit="app.saveEntry(event)">
+                        <input type="hidden" id="entry-id">
+                        
+                        <div class="form-group">
+                            <label for="entry-date">Date</label>
+                            <input type="date" id="entry-date" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="entry-start">Start Time</label>
+                                <input type="time" id="entry-start" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="entry-end">End Time</label>
+                                <input type="time" id="entry-end" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="entry-break">Break Duration (minutes)</label>
+                            <input type="number" id="entry-break" min="0" value="0" placeholder="e.g., 60">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="entry-notes">Notes (Optional)</label>
+                            <textarea id="entry-notes" rows="3" placeholder="e.g., Rendered makeup hours, Training seminar..."></textarea>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-text" onclick="app.showView('dashboard')">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Entry</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- View: Settings -->
+            <section id="view-settings" class="view">
+                <div class="settings-container">
+                    <h2>Settings</h2>
+                    
+                    <div class="settings-group">
+                        <h3>Targets</h3>
+                        
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <label>Required Hours</label>
+                                <p>Total hours needed for OJT completion</p>
+                            </div>
+                            <input type="number" id="setting-required" class="setting-input" value="300" min="1">
+                        </div>
+
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <label>Daily Expected Hours</label>
+                                <p>Standard work hours per day</p>
+                            </div>
+                            <input type="number" id="setting-daily" class="setting-input" value="8" min="1" max="24">
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h3>Appearance</h3>
+                        
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <label>Dark Mode</label>
+                                <p>Use dark theme</p>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="setting-darkmode">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h3>Notifications</h3>
+                        
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <label>End of Day Reminder</label>
+                                <p>Remind me if still clocked in at 5 PM</p>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="setting-reminder">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h3>Data Management</h3>
+                        
+                        <div class="setting-action">
+                            <button class="btn btn-secondary btn-full" onclick="app.exportData()">
+                                📤 Export Data (JSON)
+                            </button>
+                        </div>
+                        
+                        <div class="setting-action">
+                            <label class="btn btn-secondary btn-full" style="display: block; text-align: center;">
+                                📥 Import Data (JSON)
+                                <input type="file" id="import-file" accept=".json" style="display: none;" onchange="app.importData(this)">
+                            </label>
+                        </div>
+                        
+                        <div class="setting-action">
+                            <button class="btn btn-danger btn-full" onclick="app.clearAllData()">
+                                🗑 Clear All Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h3>About</h3>
+                        <div class="about-info">
+                            <p><strong>OJT Time Tracker</strong></p>
+                            <p>Version 1.0.0</p>
+                            <p>Built for Filipino students tracking internship hours.</p>
+                            <p class="help-text">
+                                💡 Tip: Install this app to your home screen for offline access!
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-primary btn-full" onclick="app.saveSettings()">Save Settings</button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="app.showView('dashboard')" data-view="dashboard">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">Home</span>
+            </button>
+            <button class="nav-item" onclick="app.showView('calendar')" data-view="calendar">
+                <span class="nav-icon">📅</span>
+                <span class="nav-label">Calendar</span>
+            </button>
+            <button class="nav-item nav-add" onclick="app.showView('add')" data-view="add">
+                <span class="nav-icon">+</span>
+            </button>
+            <button class="nav-item" onclick="app.showView('logs')" data-view="logs">
+                <span class="nav-icon">📋</span>
+                <span class="nav-label">Logs</span>
+            </button>
+            <button class="nav-item" onclick="app.showView('settings')" data-view="settings">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Settings</span>
+            </button>
+        </nav>
+
+        <!-- Modal: Day Details -->
+        <div class="modal" id="day-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="modal-date">Date</h3>
+                    <button class="icon-btn" onclick="app.closeModal()">✕</button>
+                </div>
+                <div class="modal-body" id="modal-body">
+                    <!-- Content -->
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" onclick="app.addEntryForDate()">Add Entry</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div class="toast-container" id="toast-container"></div>
+
+        <!-- Install Prompt -->
+        <div class="install-prompt" id="install-prompt" style="display: none;">
+            <div class="install-content">
+                <p>Install OJT Tracker for offline access!</p>
+                <button class="btn btn-primary" onclick="app.installApp()">Install</button>
+                <button class="icon-btn" onclick="app.dismissInstall()">✕</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/db.js"></script>
+    <script src="js/app.js"></script>
+    
+    <script>
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('SW registered:', registration.scope);
+                    })
+                    .catch(error => {
+                        console.log('SW registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
